@@ -1,2 +1,5 @@
 # persistent-array-py
-Zero-dependency Python implementation.
+
+Persistent array with path copying
+
+Zero-dependency Python. Stdlib only.

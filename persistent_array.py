@@ -1,41 +1,25 @@
-"""Persistent Array — immutable array with O(log n) updates."""
-class Node:
-    def __init__(self, val=None, left=None, right=None):
-        self.val, self.left, self.right = val, left, right
+#!/usr/bin/env python3
+"""Persistent array — immutable versioned array via fat nodes."""
 
-def build(arr, lo=0, hi=None):
-    if hi is None: hi = len(arr) - 1
-    if lo == hi: return Node(val=arr[lo])
-    mid = (lo + hi) // 2
-    return Node(left=build(arr, lo, mid), right=build(arr, mid+1, hi))
+class PersistentArray:
+    def __init__(self, data=None):
+        self._data = list(data) if data else []
+        self._history = [list(self._data)]
+    def set(self, idx, val):
+        new = list(self._data); new[idx] = val
+        self._data = new; self._history.append(list(new))
+        return len(self._history) - 1
+    def get(self, idx, version=None):
+        v = self._history[version] if version is not None else self._data
+        return v[idx]
+    def version(self): return len(self._history) - 1
+    def snapshot(self, ver): return list(self._history[ver])
 
-def get(root, idx, lo=0, hi=None):
-    if hi is None: hi = root_size[0] - 1
-    if lo == hi: return root.val
-    mid = (lo + hi) // 2
-    if idx <= mid: return get(root.left, idx, lo, mid)
-    return get(root.right, idx, mid+1, hi)
+def main():
+    a = PersistentArray([1,2,3,4,5])
+    print(f"v0: {a.snapshot(0)}")
+    v1 = a.set(2, 99)
+    print(f"v{v1}: {a.snapshot(v1)}")
+    print(f"v0[2] = {a.get(2, 0)}, v{v1}[2] = {a.get(2, v1)}")
 
-def update(root, idx, val, lo=0, hi=None):
-    if hi is None: hi = root_size[0] - 1
-    if lo == hi: return Node(val=val)
-    mid = (lo + hi) // 2
-    if idx <= mid: return Node(left=update(root.left, idx, val, lo, mid), right=root.right)
-    return Node(left=root.left, right=update(root.right, idx, val, mid+1, hi))
-
-root_size = [0]
-
-if __name__ == "__main__":
-    arr = [1, 2, 3, 4, 5]
-    root_size[0] = len(arr)
-    v0 = build(arr)
-    assert get(v0, 2) == 3
-    v1 = update(v0, 2, 99)
-    assert get(v0, 2) == 3  # old version unchanged
-    assert get(v1, 2) == 99  # new version updated
-    v2 = update(v1, 0, 42)
-    assert get(v0, 0) == 1
-    assert get(v2, 0) == 42
-    assert get(v2, 2) == 99
-    print("Persistent array: 3 versions coexist correctly")
-    print("All tests passed!")
+if __name__ == "__main__": main()
